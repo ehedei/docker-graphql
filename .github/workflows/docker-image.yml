@@ -18,23 +18,38 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Git Semantic Version
+      uses: PaulHatch/semantic-version@v4.0.3
+      with:
+        major_pattern: "major:"
+        minor_pattern: "feat:"
+        format: "${major}.${minor}.${patch}-prerelease${increment}"
+      id: version
+
+
     - name: Docker login
       env:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        DOCKER_IMAGE: ehedeidev/docker-graphql
+
       run: |
         docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
 
     - name: Build Docker image
+      env:
+        DOCKER_IMAGE: ehedeidev/docker-graphql
+        NEW_VERSION: ${{ steps.version.outputs.version }}
       run: |
-        docker build -t ehedeidev/docker-graphql:0.0.2 .
-        docker build -t ehedeidev/docker-graphql:latest .
+        docker build -t $DOCKER_IMAGE:$NEW_VERSION .
+        docker build -t $DOCKER_IMAGE:latest .
 
     - name: Push Docker image
+      env:
+        DOCKER_IMAGE: ehedeidev/docker-graphql
+        NEW_VERSION: ${{ steps.version.outputs.version }}
       run: |
-        docker push ehedeidev/docker-graphql:0.0.2
-        docker push ehedeidev/docker-graphql:latest
+        docker push $DOCKER_IMAGE:$NEW_VERSION
+        docker push $DOCKER_IMAGE:latest
 
     # - name: Build the Docker image
     #   run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
